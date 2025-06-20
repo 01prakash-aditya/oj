@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: oj-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+      
+    volumes:
+      - mongo-data:/data/db
+
+      
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/oj
+    depends_on:
+      - mongo
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+  client:
+    build: ./client
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app:cached
+      - /app/node_modules
+    depends_on:
+      - api
+    environment:
+      - IS_DOCKER=true
+
+volumes:
+  mongo-data:
