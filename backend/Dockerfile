@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 node:24
+FROM --platform=linux/amd64 node:20
 
 # Install g++, Python 3, and JDK 24
 RUN apt-get update && \

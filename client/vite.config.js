@@ -4,13 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 
 const isDocker = process.env.IS_DOCKER === 'true'
 
-// API target with environment variable support
 const getApiTarget = () => {
   if (isDocker) {
     return 'http://api:3000'
   }
   
-  // Use environment variable or default to localhost
   return process.env.VITE_API_URL || 'http://localhost:3000'
 }
 
@@ -30,7 +28,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         timeout: 30000,
-        // Ensure cookies are forwarded properly
         cookieDomainRewrite: {
           '*': 'localhost'
         },
