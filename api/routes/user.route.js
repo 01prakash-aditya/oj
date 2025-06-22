@@ -1,14 +1,59 @@
 import express from 'express';
 import {deleteUser, test, updateUser, submitSolution, getUserSolvedProblems} from '../controllers/user.controller.js';
-import { verifytoken } from '../utils/verifyUser.js';
 import User from '../models/user.model.js';
 
 const router = express.Router();
 
 router.get('/', test);
-router.post("/update/:id", verifytoken, updateUser);
-router.delete("/delete/:id", verifytoken, deleteUser);
-router.post("/submit-solution", verifytoken, submitSolution);
+router.post("/update/:id", async (req, res, next) => {
+  try {
+    // Add the user ID from params to the request object for the controller
+    req.user = { id: req.params.id };
+    await updateUser(req, res, next);
+  } catch (error) {
+    console.error('Error in update route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user',
+      error: error.message
+    });
+  }
+});
+router.delete("/delete/:id", async (req, res, next) => {
+  try {
+    // Add the user ID from params to the request object for the controller
+    req.user = { id: req.params.id };
+    await deleteUser(req, res, next);
+  } catch (error) {
+    console.error('Error in delete route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete user',
+      error: error.message
+    });
+  }
+});
+router.post("/submit-solution", async (req, res, next) => {
+  try {
+    // You'll need to include userId in the request body
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required in request body'
+      });
+    }
+    req.user = { id: userId };
+    await submitSolution(req, res, next);
+  } catch (error) {
+    console.error('Error in submit-solution route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit solution',
+      error: error.message
+    });
+  }
+});
 
 router.get('/leaderboard', async (req, res, next) => {
   try {
@@ -67,9 +112,19 @@ router.get('/leaderboard', async (req, res, next) => {
   }
 });
 
-router.get('/solved-problems', verifytoken, async (req, res, next) => {
+router.get('/solved-problems', async (req, res, next) => {
   try {
-    const userDoc = await User.findById(req.user.id).select('solvedProblems');
+    // You'll need to get user ID from request body or params since no token verification
+    const userId = req.body.userId || req.params.userId || req.query.userId;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userDoc = await User.findById(userId).select('solvedProblems');
     
     if (!userDoc) {
       return res.status(404).json({
@@ -95,11 +150,18 @@ router.get('/solved-problems', verifytoken, async (req, res, next) => {
   }
 });
 
-router.post('/update-rating', verifytoken, async (req, res, next) => {
+router.post('/update-rating', async (req, res, next) => {
   try {
-    const { problemId, difficulty, isFirstSolve } = req.body;
+    const { userId, problemId, difficulty, isFirstSolve } = req.body;
     
-    const userDoc = await User.findById(req.user.id);
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+    
+    const userDoc = await User.findById(userId);
     if (!userDoc) {
       return res.status(404).json({
         success: false,
@@ -160,9 +222,19 @@ router.post('/update-rating', verifytoken, async (req, res, next) => {
   }
 });
 
-router.get('/stats', verifytoken, async (req, res, next) => {
+router.get('/stats', async (req, res, next) => {
   try {
-    const userDoc = await User.findById(req.user.id).select('solvedProblems rating createdAt questionCount');
+    // You'll need to get user ID from request params or query
+    const userId = req.params.userId || req.query.userId;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userDoc = await User.findById(userId).select('solvedProblems rating createdAt questionCount');
     
     if (!userDoc) {
       return res.status(404).json({
@@ -192,9 +264,19 @@ router.get('/stats', verifytoken, async (req, res, next) => {
   }
 });
 
-router.get('/rank', verifytoken, async (req, res, next) => {
+router.get('/rank', async (req, res, next) => {
   try {
-    const userDoc = await User.findById(req.user.id);
+    // You'll need to get user ID from request params or query
+    const userId = req.params.userId || req.query.userId;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userDoc = await User.findById(userId);
     if (!userDoc) {
       return res.status(404).json({
         success: false,
