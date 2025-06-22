@@ -79,7 +79,7 @@ export default function Profile() {
         credentials: 'include' 
       });
       dispatch(SignOut());
-      window.location.href = '/sign-in';
+      window.location.href = '/';
     } catch (error) {
       console.error(error);
     }
