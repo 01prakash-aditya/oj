@@ -11,8 +11,6 @@ services:
     volumes:
       - mongo-data:/data/db
 
-      
-
   api:
     build:
       context: .
@@ -36,19 +34,6 @@ services:
       - /app/node_modules
     depends_on:
       - api
-
-  client:
-    build: ./client
-    command: npm run dev
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./client:/app:cached
-      - /app/node_modules
-    depends_on:
-      - api
-    environment:
-      - IS_DOCKER=true
 
 volumes:
   mongo-data:

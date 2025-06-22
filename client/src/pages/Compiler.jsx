@@ -70,7 +70,7 @@ export default function Compiler() {
     const fetchSolvedProblems = async () => {
       if (currentUser) {
         try {
-          const response = await fetch(`${API_URL}/api/user/solved-problems`, {
+          const response = await fetch(`${API_URL}/api/user/solved-problems/${currentUser._id}`, {
             credentials: 'include'
           });
           const data = await response.json();
