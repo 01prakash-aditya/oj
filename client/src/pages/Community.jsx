@@ -131,14 +131,15 @@ export default function Community() {
   };
 
   const handleSubmitDiscussion = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
     if (!currentUser) {
       alert('Please sign in to post a discussion');
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/community/discussions`, {
+      // Changed: Add user ID to the URL path
+      const response = await fetch(`${API_URL}/api/community/discussions/${currentUser._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,9 +174,10 @@ export default function Community() {
   };
 
   const handleUpdateDiscussion = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
     try {
-      const response = await fetch(`${API_URL}/api/community/discussions/${editingDiscussion}`, {
+      // Changed: Add both discussion ID and user ID to the URL path
+      const response = await fetch(`${API_URL}/api/community/discussions/${editingDiscussion}/${currentUser._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -201,13 +203,15 @@ export default function Community() {
     }
   };
 
+// Fix for handleDeleteDiscussion function (around line 198)
   const handleDeleteDiscussion = async (discussionId) => {
     if (!window.confirm('Are you sure you want to delete this discussion? This action cannot be undone.')) {
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/community/discussions/${discussionId}`, {
+      // Changed: Add both discussion ID and user ID to the URL path
+      const response = await fetch(`${API_URL}/api/community/discussions/${discussionId}/${currentUser._id}`, {
         method: 'DELETE',
         credentials: 'include'
       });

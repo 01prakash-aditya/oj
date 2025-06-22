@@ -16,22 +16,25 @@ export default function ProblemSet() {
 
   useEffect(() => {
     const fetchSolvedProblems = async () => {
-      if (currentUser) {
-        try {
-          const response = await fetch(`${API_URL}/api/user/solved-problems`, {
-            credentials: 'include'
-          });
-          const data = await response.json();
-          if (data.success) {
-            setSolvedProblems(data.solvedProblems);
-          }
-        } catch (error) {
-          console.error('Error fetching solved problems:', error);
+      try {
+        const response = await fetch(`${API_URL}/api/user/solved-problems/${currentUser._id}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success) {
+          setSolvedProblems(data.solvedProblems);
         }
+      } catch (error) {
+        console.error('Error fetching solved problems:', error);
+        // Don't set error state for solved problems as it's not critical
+        setSolvedProblems([]);
       }
     };
 
-    fetchSolvedProblems();
+    // Only fetch if currentUser exists
+    if (currentUser && currentUser._id) {
+      fetchSolvedProblems();
+    }
   }, [currentUser]);
 
   useEffect(() => {
@@ -145,6 +148,15 @@ export default function ProblemSet() {
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6 text-center text-slate-800">Problem Set</h1>
       
+      {/* User not signed in message */}
+      {!currentUser && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="text-yellow-800 text-center">
+            <span className="font-medium">Sign in</span> to track your progress and see solved problems!
+          </div>
+        </div>
+      )}
+      
       {/* Filters and Search */}
       <div className="bg-blue-100 p-4 rounded-lg mb-6 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -210,12 +222,12 @@ export default function ProblemSet() {
         {filteredProblems.map((problem, index) => (
           <tr 
             key={problem._id} 
-            className={`hover:bg-gray-50 ${isProblemSolved(problem._id) ? 'bg-green-50' : ''}`}
+            className={`hover:bg-gray-50 ${currentUser && isProblemSolved(problem._id) ? 'bg-green-50' : ''}`}
           >
             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 w-16">
               <div className="flex items-center gap-2">
                 {index + 1}
-                {isProblemSolved(problem._id) && (
+                {currentUser && isProblemSolved(problem._id) && (
                   <span className="text-green-600 text-lg">✓</span>
                 )}
               </div>
@@ -223,7 +235,7 @@ export default function ProblemSet() {
             <td className="px-6 py-4 text-sm text-gray-500 lg:w-auto" style={{ minWidth: '300px' }}>
               <div className="flex items-center gap-2 mb-1">
                 <div className="font-medium text-gray-900">{problem.title}</div>
-                {isProblemSolved(problem._id) && (
+                {currentUser && isProblemSolved(problem._id) && (
                   <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
                     Solved
                   </span>
@@ -247,12 +259,12 @@ export default function ProblemSet() {
               <button
                 onClick={() => handleProblemClick(problem)}
                 className={`px-3 py-1 rounded-md whitespace-nowrap ${
-                  isProblemSolved(problem._id)
+                  currentUser && isProblemSolved(problem._id)
                     ? 'text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100'
                     : 'text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100'
                 }`}
               >
-                {isProblemSolved(problem._id) ? 'Review' : 'Solve'}
+                {currentUser && isProblemSolved(problem._id) ? 'Review' : 'Solve'}
               </button>
             </td>
           </tr>
@@ -276,12 +288,12 @@ export default function ProblemSet() {
         <div className="mt-10">
           <h2 className="text-2xl font-semibold mb-4 text-slate-800">Featured Problem</h2>
           
-          <div className={`p-5 rounded-lg shadow ${isProblemSolved(filteredProblems[0]._id) ? 'bg-green-50 border border-green-200' : 'bg-white'}`}>
+          <div className={`p-5 rounded-lg shadow ${currentUser && isProblemSolved(filteredProblems[0]._id) ? 'bg-green-50 border border-green-200' : 'bg-white'}`}>
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <h3 className="text-xl font-semibold">{filteredProblems[0].title}</h3>
-                  {isProblemSolved(filteredProblems[0]._id) && (
+                  {currentUser && isProblemSolved(filteredProblems[0]._id) && (
                     <span className="text-green-600 text-xl">✓</span>
                   )}
                 </div>
@@ -290,7 +302,7 @@ export default function ProblemSet() {
                     {filteredProblems[0].difficulty.charAt(0).toUpperCase() + filteredProblems[0].difficulty.slice(1)}
                   </span>
                   <span className="text-sm text-gray-500">Rating: {filteredProblems[0].rating}</span>
-                  {isProblemSolved(filteredProblems[0]._id) && (
+                  {currentUser && isProblemSolved(filteredProblems[0]._id) && (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
                       Solved
                     </span>
@@ -300,12 +312,12 @@ export default function ProblemSet() {
               <button
                 onClick={() => handleProblemClick(filteredProblems[0])}
                 className={`px-4 py-2 rounded-lg whitespace-nowrap ${
-                  isProblemSolved(filteredProblems[0]._id)
+                  currentUser && isProblemSolved(filteredProblems[0]._id)
                     ? 'bg-green-600 text-white hover:bg-green-700'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                {isProblemSolved(filteredProblems[0]._id) ? 'Review This Problem' : 'Solve This Problem'}
+                {currentUser && isProblemSolved(filteredProblems[0]._id) ? 'Review This Problem' : 'Solve This Problem'}
               </button>
             </div>
             

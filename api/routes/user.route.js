@@ -1,14 +1,88 @@
 import express from 'express';
 import {deleteUser, test, updateUser, submitSolution, getUserSolvedProblems} from '../controllers/user.controller.js';
-import { verifytoken } from '../utils/verifyUser.js';
 import User from '../models/user.model.js';
 
 const router = express.Router();
 
 router.get('/', test);
-router.post("/update/:id", verifytoken, updateUser);
-router.delete("/delete/:id", verifytoken, deleteUser);
-router.post("/submit-solution", verifytoken, submitSolution);
+
+router.post("/update/:id", async (req, res, next) => {
+  try {
+    // Add the user ID from params to the request object for the controller
+    req.user = { id: req.params.id };
+    await updateUser(req, res, next);
+  } catch (error) {
+    console.error('Error in update route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user',
+      error: error.message
+    });
+  }
+});
+
+router.delete("/delete/:id", async (req, res, next) => {
+  try {
+    // Add the user ID from params to the request object for the controller
+    req.user = { id: req.params.id };
+    await deleteUser(req, res, next);
+  } catch (error) {
+    console.error('Error in delete route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete user',
+      error: error.message
+    });
+  }
+});
+
+// Option 1: Keep the ID parameter route (recommended)
+router.post("/submit-solution/:id", async (req, res, next) => {
+  try {
+    await submitSolution(req, res, next);
+  } catch (error) {
+    console.error('Error in submit-solution route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit solution',
+      error: error.message
+    });
+  }
+});
+
+// Option 2: Add a route without ID parameter (alternative solution)
+// If you want to support both with and without ID in URL
+router.post("/submit-solution", async (req, res, next) => {
+  try {
+    // Extract userId from request body instead of params
+    const { userId, problemId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required in request body'
+      });
+    }
+    
+    if (!problemId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Problem ID is required'
+      });
+    }
+
+    // Modify the request to include the userId in params for the controller
+    req.params.id = userId;
+    await submitSolution(req, res, next);
+  } catch (error) {
+    console.error('Error in submit-solution route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit solution',
+      error: error.message
+    });
+  }
+});
 
 router.get('/leaderboard', async (req, res, next) => {
   try {
@@ -67,39 +141,34 @@ router.get('/leaderboard', async (req, res, next) => {
   }
 });
 
-router.get('/solved-problems', verifytoken, async (req, res, next) => {
+// Get solved problems by user ID from URL params
+router.get('/solved-problems/:id', async (req, res, next) => {
   try {
-    const userDoc = await User.findById(req.user.id).select('solvedProblems');
-    
-    if (!userDoc) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    const solvedProblemIds = userDoc.solvedProblems.map(
-      solved => solved.problemId.toString()
-    );
-
-    res.status(200).json({
-      success: true,
-      solvedProblems: solvedProblemIds 
-    });
+    await getUserSolvedProblems(req, res, next);
   } catch (error) {
     console.error('Error fetching solved problems:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch solved problems'
+      message: 'Failed to fetch solved problems',
+      error: error.message
     });
   }
 });
 
-router.post('/update-rating', verifytoken, async (req, res, next) => {
+// Fixed: Update rating route with proper user ID from params
+router.post('/update-rating/:id', async (req, res, next) => {
   try {
+    const userId = req.params.id;
     const { problemId, difficulty, isFirstSolve } = req.body;
     
-    const userDoc = await User.findById(req.user.id);
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+    
+    const userDoc = await User.findById(userId);
     if (!userDoc) {
       return res.status(404).json({
         success: false,
@@ -160,9 +229,19 @@ router.post('/update-rating', verifytoken, async (req, res, next) => {
   }
 });
 
-router.get('/stats', verifytoken, async (req, res, next) => {
+// Get user stats by user ID from URL params
+router.get('/stats/:id', async (req, res, next) => {
   try {
-    const userDoc = await User.findById(req.user.id).select('solvedProblems rating createdAt questionCount');
+    const userId = req.params.id;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userDoc = await User.findById(userId).select('solvedProblems rating createdAt questionCount');
     
     if (!userDoc) {
       return res.status(404).json({
@@ -192,9 +271,19 @@ router.get('/stats', verifytoken, async (req, res, next) => {
   }
 });
 
-router.get('/rank', verifytoken, async (req, res, next) => {
+// Get user rank by user ID from URL params
+router.get('/rank/:id', async (req, res, next) => {
   try {
-    const userDoc = await User.findById(req.user.id);
+    const userId = req.params.id;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userDoc = await User.findById(userId);
     if (!userDoc) {
       return res.status(404).json({
         success: false,

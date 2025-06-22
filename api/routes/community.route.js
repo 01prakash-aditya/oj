@@ -1,6 +1,5 @@
 import express from 'express';
 import Discussion from '../models/discussion.model.js';
-import { verifytoken } from '../utils/verifyUser.js';
 
 const router = express.Router();
 
@@ -35,9 +34,17 @@ router.get('/discussions', async (req, res, next) => {
   }
 });
 
-router.post('/discussions', verifytoken, async (req, res, next) => {
+router.post('/discussions/:id', async (req, res, next) => {
   try {
+    const userId = req.params.id;
     const { title, content, problemId, tags } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
 
     if (!title || !content) {
       return res.status(400).json({
@@ -65,7 +72,7 @@ router.post('/discussions', verifytoken, async (req, res, next) => {
       content: content.trim(),
       problemId: problemId?.trim() || null,
       tags: Array.isArray(tags) ? tags.slice(0, 10) : [],
-      author: req.user.id
+      author: userId
     });
 
     await discussion.save();
@@ -115,11 +122,19 @@ router.get('/discussions/:id', async (req, res, next) => {
   }
 });
 
-router.put('/discussions/:id', verifytoken, async (req, res, next) => {
+router.put('/discussions/:discussionId/:userId', async (req, res, next) => {
   try {
+    const { discussionId, userId } = req.params;
     const { title, content, problemId, tags } = req.body;
     
-    const discussion = await Discussion.findById(req.params.id);
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const discussion = await Discussion.findById(discussionId);
     
     if (!discussion) {
       return res.status(404).json({
@@ -128,7 +143,7 @@ router.put('/discussions/:id', verifytoken, async (req, res, next) => {
       });
     }
 
-    if (discussion.author.toString() !== req.user.id) {
+    if (discussion.author.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: 'You can only edit your own discussions'
@@ -157,7 +172,7 @@ router.put('/discussions/:id', verifytoken, async (req, res, next) => {
     }
 
     const updatedDiscussion = await Discussion.findByIdAndUpdate(
-      req.params.id,
+      discussionId,
       {
         title: title.trim(),
         content: content.trim(),
@@ -243,9 +258,18 @@ router.get('/discussions/search/:query', async (req, res, next) => {
   }
 });
 
-router.delete('/discussions/:id', verifytoken, async (req, res, next) => {
+router.delete('/discussions/:discussionId/:userId', async (req, res, next) => {
   try {
-    const discussion = await Discussion.findById(req.params.id);
+    const { discussionId, userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const discussion = await Discussion.findById(discussionId);
     
     if (!discussion) {
       return res.status(404).json({
@@ -254,14 +278,14 @@ router.delete('/discussions/:id', verifytoken, async (req, res, next) => {
       });
     }
 
-    if (discussion.author.toString() !== req.user.id) {
+    if (discussion.author.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: 'You can only delete your own discussions'
       });
     }
 
-    await Discussion.findByIdAndDelete(req.params.id);
+    await Discussion.findByIdAndDelete(discussionId);
 
     res.status(200).json({
       success: true,

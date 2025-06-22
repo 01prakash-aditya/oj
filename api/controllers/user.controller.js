@@ -71,8 +71,13 @@ export const deleteUser = async (req, res, next) => {
 
 export const submitSolution = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    // Get userId from params instead of req.user
+    const userId = req.params.id;
     const { problemId } = req.body;
+
+    if (!userId) {
+      return next(errorHandler(400, 'User ID is required'));
+    }
 
     const problem = await Problem.findById(problemId);
     if (!problem) {
@@ -80,6 +85,10 @@ export const submitSolution = async (req, res, next) => {
     }
 
     const user = await User.findById(userId);
+    if (!user) {
+      return next(errorHandler(404, 'User not found'));
+    }
+
     const alreadySolved = user.solvedProblems.some(
       solved => solved.problemId.toString() === problemId
     );
@@ -124,7 +133,12 @@ export const submitSolution = async (req, res, next) => {
 
 export const getUserSolvedProblems = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    // Get userId from params instead of req.user
+    const userId = req.params.id;
+    
+    if (!userId) {
+      return next(errorHandler(400, 'User ID is required'));
+    }
     
     const user = await User.findById(userId)
       .populate('solvedProblems.problemId', '_id title')

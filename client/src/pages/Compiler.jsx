@@ -340,59 +340,59 @@ export default function Compiler() {
   };
 
   const handleSubmitSolution = async () => {
-    if (!currentUser) {
-      setStatusMessage('Please sign in to submit your solution');
-      return;
-    }
+  if (!currentUser) {
+    setStatusMessage('Please sign in to submit your solution');
+    return;
+  }
 
-    if (!selectedProblem) {
-      setStatusMessage('No problem selected to submit');
-      return;
-    }
+  if (!selectedProblem) {
+    setStatusMessage('No problem selected to submit');
+    return;
+  }
 
-    const isProblemSolved = solvedProblems.includes(selectedProblem.id);
-    if (isProblemSolved) {
-      setStatusMessage('You have already solved this problem!');
-      return;
-    }
+  const isProblemSolved = solvedProblems.includes(selectedProblem.id);
+  if (isProblemSolved) {
+    setStatusMessage('You have already solved this problem!');
+    return;
+  }
 
-    setIsSubmitting(true);
-    setStatusMessage('Submitting solution...');
+  setIsSubmitting(true);
+  setStatusMessage('Submitting solution...');
+  
+  try {
+    const response = await fetch(`${API_URL}/api/user/submit-solution`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        userId: currentUser._id,        // Add this line
+        problemId: selectedProblem.id
+      })
+    });
+
+    const data = await response.json();
     
-    try {
-      const response = await fetch(`${API_URL}/api/user/submit-solution`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          problemId: selectedProblem.id
-        })
-      });
-
-      const data = await response.json();
+    if (data.success) {
+      dispatch(updateUserSuccess(data.user));
       
-      if (data.success) {
-        dispatch(updateUserSuccess(data.user));
-        
-        setSolvedProblems(prev => [...prev, selectedProblem.id]);
-        
-        setStatusMessage(`🎉 Solution submitted successfully! Rating increased by ${data.ratingGained} points!`);
-        setOutput(`All test cases passed! ✅\n\nCongratulations! You've successfully solved "${selectedProblem.title}"\nRating gained: +${data.ratingGained} points\nTotal problems solved: ${data.user.questionCount}`);
-        
-        setAllTestsPassed(false);
-      } else {
-        setStatusMessage(data.message || 'Submission failed');
-      }
-
-    } catch (error) {
-      setStatusMessage(`Submission error: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
+      setSolvedProblems(prev => [...prev, selectedProblem.id]);
+      
+      setStatusMessage(`🎉 Solution submitted successfully! Rating increased by ${data.ratingGained} points!`);
+      setOutput(`All test cases passed! ✅\n\nCongratulations! You've successfully solved "${selectedProblem.title}"\nRating gained: +${data.ratingGained} points\nTotal problems solved: ${data.user.questionCount}`);
+      
+      setAllTestsPassed(false);
+    } else {
+      setStatusMessage(data.message || 'Submission failed');
     }
-  };
 
+  } catch (error) {
+    setStatusMessage(`Submission error: ${error.message}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   const handleTestCaseChange = (index) => {
     if (selectedProblem && selectedProblem.testCases && selectedProblem.testCases[index]) {
       setTestCaseIndex(index);
