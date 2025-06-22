@@ -2,19 +2,11 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import https from 'https';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
 import problemRoutes from './routes/problem.route.js';
 import communityRoutes from './routes/community.route.js';
 import cookieParser from 'cookie-parser';
-
-// Get current directory path for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -56,30 +48,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// HTTPS Configuration
-try {
-    const privateKey = fs.readFileSync(path.join(__dirname, '..', 'ssl', 'privatekey.pem'), 'utf8');
-    const certificate = fs.readFileSync(path.join(__dirname, '..', 'ssl', 'certificate.pem'), 'utf8');
-    
-    const credentials = {
-        key: privateKey,
-        cert: certificate
-    };
-    
-    const httpsServer = https.createServer(credentials, app);
-    
-    httpsServer.listen(PORT, () => {
-        console.log(`HTTPS Server is running on port ${PORT}!`);
-        console.log(`Server URL: https://localhost:${PORT}`);
-    });
-    
-} catch (error) {
-    console.error('Error loading SSL certificates:', error.message);
-    console.log('Falling back to HTTP server...');
-    
-    // Fallback to HTTP if SSL certificates are not found
-    app.listen(PORT, () => {
-        console.log(`HTTP Server is running on port ${PORT}!`);
-        console.log(`Server URL: http://localhost:${PORT}`);
-    });
-}
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}!`);
+});

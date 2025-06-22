@@ -1,21 +1,12 @@
 import express from 'express';
+const app = express();
 import cors from 'cors';
-import https from 'https';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { generateFile } from './generateFile.js';
 import { executeCpp } from './executeCpp.js';
 import { executePy } from './executePy.js';
 import { executeJava } from './executeJava.js';
 import { aiCodeReview } from './aiCodeReview.js';
 import { chatBot } from './chatBot.js';
-
-// Get current directory path for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -114,32 +105,9 @@ app.get('/', (req, res) => {
     });
 });
 
+// Bind to all network interfaces (0.0.0.0)
 const PORT = process.env.PORT || 8000;
-
-// HTTPS Configuration
-try {
-    const privateKey = fs.readFileSync(path.join(__dirname, '..', 'ssl', 'privatekey.pem'), 'utf8');
-    const certificate = fs.readFileSync(path.join(__dirname, '..', 'ssl', 'certificate.pem'), 'utf8');
-    
-    const credentials = {
-        key: privateKey,
-        cert: certificate
-    };
-    
-    const httpsServer = https.createServer(credentials, app);
-    
-    httpsServer.listen(PORT, '0.0.0.0', () => {
-        console.log(`HTTPS Server is running on https://0.0.0.0:${PORT}`);
-        console.log('Supported languages: C++, Python 3, Java');
-    });
-    
-} catch (error) {
-    console.error('Error loading SSL certificates:', error.message);
-    console.log('Falling back to HTTP server...');
-    
-    // Fallback to HTTP if SSL certificates are not found
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`HTTP Server is running on http://0.0.0.0:${PORT}`);
-        console.log('Supported languages: C++, Python 3, Java');
-    });
-}
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on http://0.0.0.0:${PORT}`);
+  console.log('Supported languages: C++, Python 3, Java');
+});
